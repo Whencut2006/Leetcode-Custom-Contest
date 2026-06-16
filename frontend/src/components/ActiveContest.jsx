@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function ActiveContest({ contestData }) {
   const { theme } = useTheme();
+  const navigate = useNavigate();
 
   const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes
-  const [hasStarted, setHasStarted] = useState(false); // <-- The new Lobby state!
+  const [hasStarted, setHasStarted] = useState(false);
 
   // The timer now only ticks IF hasStarted is true
   useEffect(() => {
@@ -75,62 +76,73 @@ export default function ActiveContest({ contestData }) {
 
         {/* Problem List */}
         <div className="flex flex-col border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
-          {contestData.problems.map((problem, index) => (
-            <div
-              key={index}
-              // The Universal Alternating Row CSS!
-              className={`flex items-center justify-between p-5 transition-all
-                odd:bg-[#FFFFFF] even:bg-[#FAFAFA]
-                dark:odd:bg-[#1A1A1A] dark:even:bg-[#272727] dark:text-white
-                ${!hasStarted ? 'opacity-80' : ''}
-              `}
-            >
-              <div className="flex flex-col">
-                <span className="text-lg font-semibold mb-1">
-                  {index + 1}. {problem.title}
-                </span>
-                <span className={`text-sm font-bold tracking-wide ${getDifficultyColor(problem.difficulty)}`}>
-                  {problem.difficulty}
-                </span>
-              </div>
+          {contestData.problems.map((problem, index) => {
 
-              <div className="flex items-center gap-4">
-                {/* The SVG Tick - Rendered if problem is SOLVED */}
-                {problem.status === 'SOLVED' && (
-                  <div className="relative w-8 h-8 text-green-500">
-                    <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="circle" className="svg-inline--fa fa-circle absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"></path></svg>
-                  </div>
-                )}
+            // --- Extracting row content ---
+            const rowContent = (
+              <>
+                <div className="flex flex-col">
+                  {/* Removed the underline hover effect, keeping it clean */}
+                  <span className="text-lg font-semibold mb-1">
+                    {index + 1}. {problem.title}
+                  </span>
+                  <span className={`text-sm font-bold tracking-wide ${getDifficultyColor(problem.difficulty)}`}>
+                    {problem.difficulty}
+                  </span>
+                </div>
 
-                {!hasStarted ? (
-                  <button disabled className="px-6 py-2.5 bg-gray-400 dark:bg-gray-700 text-white text-sm font-medium rounded-lg cursor-not-allowed shadow-sm">
-                    Solve
-                  </button>
-                ) : (
-                  <a
-                    href={`https://leetcode.com/problems/${problem.titleSlug}/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
-                  >
-                    Solve
-                  </a>
-                )}
+                <div className="flex items-center justify-end w-12">
+                  {/* Space reserved for your Status Poller Tick */}
+                  {problem.status === 'SOLVED' && (
+                    <div className="relative w-8 h-8 text-green-500">
+                      <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="circle" className="svg-inline--fa fa-circle absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="currentColor" d="M464 256A208 208 0 1 0 48 256a208 208 0 1 0 416 0zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256z"></path>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </>
+            );
+
+            // Removed the 'group' class since we no longer need to target child elements on hover
+            const rowClasses = `flex items-center justify-between p-5 transition-all block w-full
+              odd:bg-[#FFFFFF] even:bg-[#FAFAFA]
+              dark:odd:bg-[#1A1A1A] dark:even:bg-[#272727] dark:text-white
+              ${!hasStarted ? 'opacity-80' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a2a2a]'}
+            `;
+
+            // Conditionally render an <a> tag or a read-only <div>
+            return hasStarted ? (
+              <a
+                key={index}
+                href={`https://leetcode.com/problems/${problem.titleSlug}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={rowClasses}
+                style={{ textDecoration: 'none' }} // Extra safeguard against default link styles
+              >
+                {rowContent}
+              </a>
+            ) : (
+              <div key={index} className={rowClasses}>
+                {rowContent}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Quit Contest Button */}
+        {/* Quit Contest Button - Made larger and bolder */}
         <div className="mt-12 text-center">
-          <Link
-            to="/"
-            className={`text-sm font-medium transition-colors hover:underline ${
-              theme === 'dark' ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'
+          <button
+            onClick={() => navigate('/')}
+            className={`px-8 py-3 text-lg font-bold rounded-xl transition-colors focus:outline-none shadow-sm ${
+              theme === 'dark'
+                ? 'bg-[#2a2a2a] text-red-400 hover:bg-[#333333]'
+                : 'bg-gray-200 text-red-600 hover:bg-gray-300'
             }`}
           >
-            Quit Contest & Return Home
-          </Link>
+            Quit Contest
+          </button>
         </div>
 
       </div>
