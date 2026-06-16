@@ -1,0 +1,35 @@
+{
+    "name": "Leetcode Custom Contest",
+    "description": "LC Custom Contest Creator",
+    "version": "1.0.0",
+    "manifest_version": 3,
+    "action":{
+        "default_popup" : "load.html"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://leetcode.com/*"
+            ],
+            "js": [
+                "content.js"
+            ]
+        }
+    ],
+    "host_permissions": [
+        "http://localhost:8080/*",
+        "https://*.ngrok-free.dev/*"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "ui/*",
+                "ui/assets/*",
+                "images/*.png"
+            ],
+            "matches": [
+                "https://leetcode.com/*"
+            ]
+        }
+    ]
+}
