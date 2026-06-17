@@ -3,7 +3,6 @@ import { useTheme } from '../context/ThemeContext';
 import ActiveContest from '../components/ActiveContest';
 import { Link } from 'react-router-dom';
 
-// The 9 Target Companies with crisp, algorithmic-focused descriptions
 const companies = [
   { id: 'adobe', name: 'Adobe', desc: 'A leading software company known for creative, design, and digital experience solutions.' },
   { id: 'amazon', name: 'Amazon', desc: 'A global technology company specializing in e-commerce, cloud computing, and AI services.' },
@@ -15,22 +14,29 @@ const companies = [
   { id: 'netflix', name: 'Netflix', desc: 'Tackle highly-available caching and streaming algorithms.' },
   { id: 'uber', name: 'Uber', desc: 'Navigate complex pathfinding algorithms and geospatial matrices.' }
 ];
+
 const getImageUrl = (imageName) => {
   if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
     return chrome.runtime.getURL(`ui/images/${imageName}`);
   }
-  // If testing locally on Vite dev server (localhost:5173)
   return `/images/${imageName}`;
 };
 
 export default function CompanyContest() {
   const { theme, username } = useTheme();
 
-  // States
-  const [loadingCompany, setLoadingCompany] = useState(null); // Tracks which specific card is loading
+  const [loadingCompany, setLoadingCompany] = useState(null);
   const [error, setError] = useState(null);
-  const [activeContestData, setActiveContestData] = useState(null);
 
+  // ==========================================
+  // --- CRITICAL FIX 1: READ FROM MEMORY ---
+  // If LCCC_DATA exists, instantly load the active contest.
+  // Do not show the grid!
+  // ==========================================
+  const [activeContestData, setActiveContestData] = useState(() => {
+    const savedContest = localStorage.getItem('LCCC_DATA');
+    return savedContest ? JSON.parse(savedContest) : null;
+  });
 
   const handleStartContest = async (companyId) => {
     setLoadingCompany(companyId);
@@ -52,7 +58,14 @@ export default function CompanyContest() {
       }
 
       const data = await response.json();
-      setActiveContestData(data); // Transition to Active Contest UI
+
+      // ==========================================
+      // --- CRITICAL FIX 2: SAVE TO MEMORY ---
+      // Secure the generated problems in browser storage immediately
+      // ==========================================
+      localStorage.setItem('LCCC_DATA', JSON.stringify(data));
+
+      setActiveContestData(data);
 
     } catch (err) {
       setError(err.message);
@@ -61,7 +74,7 @@ export default function CompanyContest() {
     }
   };
 
-  // If a contest is generated, render the Timer Dashboard
+  // If a contest is loaded from memory OR newly generated, render ActiveContest immediately
   if (activeContestData) {
     return <ActiveContest contestData={activeContestData} />;
   }
@@ -88,7 +101,7 @@ export default function CompanyContest() {
           </p>
         </div>
 
-        {/* Global Error Banner (if API fails) */}
+        {/* Global Error Banner */}
         {error && (
           <div className="mb-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded-xl text-center font-medium max-w-2xl mx-auto shadow-sm">
             {error}
@@ -106,7 +119,6 @@ export default function CompanyContest() {
                   : 'bg-white border-gray-200 hover:bg-[#f5f5f5] hover:border-gray-300'
               }`}
             >
-              {/* Logo & Text Content */}
               <div>
                 <img
                 src={getImageUrl(`${company.id}.png`)}
@@ -125,7 +137,6 @@ export default function CompanyContest() {
                 </p>
               </div>
 
-              {/* Start Button */}
               <button
                 onClick={() => handleStartContest(company.id)}
                 disabled={loadingCompany !== null}

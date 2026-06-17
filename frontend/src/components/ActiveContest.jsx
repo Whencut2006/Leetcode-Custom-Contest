@@ -6,16 +6,76 @@ export default function ActiveContest({ contestData }) {
   const { theme } = useTheme();
   const navigate = useNavigate();
 
-  const [timeLeft, setTimeLeft] = useState(90 * 60); // 90 minutes
-  const [hasStarted, setHasStarted] = useState(false);
+  // 1. Initialize timer from memory, or default to 90 mins
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedTime = localStorage.getItem('LCCC_TIMER');
+    return savedTime !== null ? parseInt(savedTime, 10) : 90 * 60;
+  });
 
-  // The timer now only ticks IF hasStarted is true
+  // 2. Initialize lobby state from memory
+  const [hasStarted, setHasStarted] = useState(() => {
+    return localStorage.getItem('LCCC_STARTED') === 'true';
+  });
+
+  // 3. Continuously save the timer to memory every time it ticks
+  useEffect(() => {
+    localStorage.setItem('LCCC_TIMER', timeLeft);
+  }, [timeLeft]);
+
+  // 4. Save the lobby state to memory when they click Start
+  useEffect(() => {
+    localStorage.setItem('LCCC_STARTED', hasStarted);
+  }, [hasStarted]);
+
+  // 5. The actual countdown timer logic
   useEffect(() => {
     if (!hasStarted || timeLeft <= 0) return;
 
     const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timerId);
   }, [hasStarted, timeLeft]);
+
+  // ==========================================
+  // --- NEW ENTERPRISE FUNCTIONS GO HERE ---
+  // ==========================================
+
+  const handleStartContest = async () => {
+    try {
+      // 1. Tell Spring Boot to update status to IN_PROGRESS
+      // NOTE: Ensure your CompanyContestResponse DTO named the ID field 'contestId'
+      await fetch(`http://localhost:8080/api/contests/${contestData.contestId}/status?status=IN_PROGRESS`, {
+        method: 'PUT'
+      });
+
+      // 2. Start the React timer UI
+      setHasStarted(true);
+    } catch (error) {
+      console.error("Failed to start contest on backend", error);
+    }
+  };
+
+  const handleQuitContest = async () => {
+    try {
+      if (hasStarted) {
+        // 1. Tell Spring Boot we abandoned ship
+        await fetch(`http://localhost:8080/api/contests/${contestData.contestId}/status?status=ABANDONED`, {
+          method: 'PUT'
+        });
+      }
+
+      // 2. Wipe the browser memory clean so the next contest starts fresh
+      localStorage.removeItem('LCCC_DATA');
+      localStorage.removeItem('LCCC_TIMER');
+      localStorage.removeItem('LCCC_STARTED');
+
+      // 3. Go back to Home
+      navigate('/');
+    } catch (error) {
+      console.error("Failed to quit contest", error);
+    }
+  };
+
+  // ==========================================
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -46,7 +106,7 @@ export default function ActiveContest({ contestData }) {
         }`}>
           <div>
             <h1 className={`text-3xl font-bold capitalize mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {contestData.company} Assessment
+              {contestData.company || contestData.title} Assessment
             </h1>
             <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
               {hasStarted
@@ -55,11 +115,11 @@ export default function ActiveContest({ contestData }) {
             </p>
           </div>
 
-          {/* Conditional Start Button OR Timer Display */}
           <div className="mt-4 md:mt-0 flex flex-col items-end">
             {!hasStarted ? (
+              // --- UPDATED START BUTTON ---
               <button
-                onClick={() => setHasStarted(true)}
+                onClick={handleStartContest}
                 className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-md transition-all transform hover:scale-105"
               >
                 Start Contest
@@ -77,12 +137,9 @@ export default function ActiveContest({ contestData }) {
         {/* Problem List */}
         <div className="flex flex-col border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
           {contestData.problems.map((problem, index) => {
-
-            // --- Extracting row content ---
             const rowContent = (
               <>
                 <div className="flex flex-col">
-                  {/* Removed the underline hover effect, keeping it clean */}
                   <span className="text-lg font-semibold mb-1">
                     {index + 1}. {problem.title}
                   </span>
@@ -90,9 +147,7 @@ export default function ActiveContest({ contestData }) {
                     {problem.difficulty}
                   </span>
                 </div>
-
                 <div className="flex items-center justify-end w-12">
-                  {/* Space reserved for your Status Poller Tick */}
                   {problem.status === 'SOLVED' && (
                     <div className="relative w-8 h-8 text-green-500">
                       <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="circle" className="svg-inline--fa fa-circle absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -104,14 +159,12 @@ export default function ActiveContest({ contestData }) {
               </>
             );
 
-            // Removed the 'group' class since we no longer need to target child elements on hover
             const rowClasses = `flex items-center justify-between p-5 transition-all block w-full
               odd:bg-[#FFFFFF] even:bg-[#FAFAFA]
               dark:odd:bg-[#1A1A1A] dark:even:bg-[#272727] dark:text-white
               ${!hasStarted ? 'opacity-80' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a2a2a]'}
             `;
 
-            // Conditionally render an <a> tag or a read-only <div>
             return hasStarted ? (
               <a
                 key={index}
@@ -119,7 +172,7 @@ export default function ActiveContest({ contestData }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={rowClasses}
-                style={{ textDecoration: 'none' }} // Extra safeguard against default link styles
+                style={{ textDecoration: 'none' }}
               >
                 {rowContent}
               </a>
@@ -131,10 +184,11 @@ export default function ActiveContest({ contestData }) {
           })}
         </div>
 
-        {/* Quit Contest Button - Made larger and bolder */}
+        {/* Quit Contest Button */}
         <div className="mt-12 text-center">
+          {/* --- UPDATED QUIT BUTTON --- */}
           <button
-            onClick={() => navigate('/')}
+            onClick={handleQuitContest}
             className={`px-8 py-3 text-lg font-bold rounded-xl transition-colors focus:outline-none shadow-sm ${
               theme === 'dark'
                 ? 'bg-[#2a2a2a] text-red-400 hover:bg-[#333333]'

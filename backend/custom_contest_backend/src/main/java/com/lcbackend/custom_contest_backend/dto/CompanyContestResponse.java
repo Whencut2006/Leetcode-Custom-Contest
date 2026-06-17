@@ -10,6 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompanyContestResponse {
+    private Long contestId;
     private String company;
     private List<ContestProblemDto> problems;
 }

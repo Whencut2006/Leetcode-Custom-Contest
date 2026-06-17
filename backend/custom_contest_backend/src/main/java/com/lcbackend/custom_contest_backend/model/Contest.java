@@ -28,11 +28,26 @@ public class Contest {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    private String contestType;
-    private String metaValue;   // "google"
-    private int durationMinutes;
+    // --- IDENTITY ---
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ContestType contestType; // COMPANY or CUSTOM
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private String title;            // e.g., "Google Assessment" or "Custom Graph Challenge"
+
+    private String targetCompany;    // e.g., "google" (Null if Custom Contest)
+    private int durationMinutes;     // e.g., 90
+
+    // --- STATE MACHINE ---
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ContestStatus status = ContestStatus.GENERATED;
+
+    // --- ANALYTICS TIMESTAMPS ---
+    private LocalDateTime createdAt = LocalDateTime.now(); // When generated
+    private LocalDateTime startedAt;                       // When they clicked Start
+    private LocalDateTime endedAt;                         // When finished/quit
 
     @OneToMany(mappedBy = "contest", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @JsonIgnore

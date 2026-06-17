@@ -4,8 +4,12 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.type.SqlTypes;
+
+import java.util.List;
 
 @Entity
 @Table(name = "contest_problems")
@@ -31,7 +35,15 @@ public class ContestProblem {
 
     private int problemOrder; // 1, 2, 3, or 4
 
-    // "PENDING", "SOLVED", "FAILED"
+    // --- ANALYTICS DATA ---
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(columnDefinition = "text[]")
+    private List<String> topics;
+
+    private Integer timeTakenSeconds; // Populated by Status Poller when solved
+
+    // --- STATE MACHINE ---
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "PENDING";
+    private ProblemStatus status = ProblemStatus.PENDING;
 }

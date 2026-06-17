@@ -3,10 +3,7 @@ package com.lcbackend.custom_contest_backend.service;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
 import com.lcbackend.custom_contest_backend.dto.ContestProblemDto;
-import com.lcbackend.custom_contest_backend.model.CompanyProblem;
-import com.lcbackend.custom_contest_backend.model.Contest;
-import com.lcbackend.custom_contest_backend.model.ContestProblem;
-import com.lcbackend.custom_contest_backend.model.User;
+import com.lcbackend.custom_contest_backend.model.*;
 import com.lcbackend.custom_contest_backend.repository.CompanyProblemRepository;
 import com.lcbackend.custom_contest_backend.repository.ContestRepository;
 import com.lcbackend.custom_contest_backend.repository.UserRepository;
@@ -62,9 +59,13 @@ public class ContestService {
 
         Contest contest = new Contest();
         contest.setUser(user);
-        contest.setContestType("COMPANY");
-        contest.setMetaValue(request.getCompany());
-        contest.setDurationMinutes(90); // Hardcoded for now, you can pass this from React later
+        contest.setContestType(ContestType.COMPANY); // Now uses the Enum
+        contest.setDurationMinutes(90);
+        contest.setTargetCompany(companyLower);      // Saves "google" strictly for DB analytics
+
+        String formattedCompany = request.getCompany().substring(0, 1).toUpperCase() + request.getCompany().substring(1).toLowerCase();
+        contest.setTitle(formattedCompany + " Assessment");
+        contest.setStatus(ContestStatus.GENERATED);
 
 
         int order = 1;
@@ -74,7 +75,12 @@ public class ContestService {
             problem.setTitleSlug(cp.getTitleSlug());
             problem.setDifficulty(cp.getDifficulty());
             problem.setProblemOrder(order++);
-            problem.setStatus("PENDING");
+
+            // --- FIXED: Use Enum instead of String ---
+            problem.setStatus(ProblemStatus.PENDING);
+
+            // --- FIXED: Inject the topics for your Analytics engine ---
+            problem.setTopics(cp.getTopics());
 
 
             contest.getContestProblems().add(problem);
@@ -92,6 +98,23 @@ public class ContestService {
                 ))
                 .collect(Collectors.toList());
 
-        return new CompanyContestResponse(request.getCompany(), problemDtos);
+        return new CompanyContestResponse(contest.getId(), request.getCompany(), problemDtos);
+    }
+
+
+    @Transactional
+    public void updateContestState(Long contestId, ContestStatus newStatus) {
+        Contest contest = contestRepository.findById(contestId)
+                .orElseThrow(() -> new IllegalArgumentException("Contest not found"));
+
+        contest.setStatus(newStatus);
+
+        if (newStatus == ContestStatus.IN_PROGRESS) {
+            contest.setStartedAt(java.time.LocalDateTime.now());
+        } else if (newStatus == ContestStatus.ABANDONED || newStatus == ContestStatus.COMPLETED) {
+            contest.setEndedAt(java.time.LocalDateTime.now());
+        }
+
+        contestRepository.save(contest);
     }
 }
