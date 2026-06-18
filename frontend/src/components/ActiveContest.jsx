@@ -6,49 +6,71 @@ export default function ActiveContest({ contestData }) {
   const { theme } = useTheme();
   const navigate = useNavigate();
 
-  // 1. Initialize timer from memory, or default to 90 mins
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const savedTime = localStorage.getItem('LCCC_TIMER');
-    return savedTime !== null ? parseInt(savedTime, 10) : 90 * 60;
-  });
+  // ==========================================
+  // /// NEW ABSOLUTE TIME LOGIC ///
+  // ==========================================
 
-  // 2. Initialize lobby state from memory
+  // 1. Initialize Lobby State
   const [hasStarted, setHasStarted] = useState(() => {
     return localStorage.getItem('LCCC_STARTED') === 'true';
   });
 
-  // 3. Continuously save the timer to memory every time it ticks
-  useEffect(() => {
-    localStorage.setItem('LCCC_TIMER', timeLeft);
-  }, [timeLeft]);
+  // 2. Fetch the target End Time from memory (if it exists)
+  const [endTime, setEndTime] = useState(() => {
+    const savedEnd = localStorage.getItem('LCCC_END_TIME');
+    return savedEnd ? parseInt(savedEnd, 10) : null;
+  });
 
-  // 4. Save the lobby state to memory when they click Start
-  useEffect(() => {
-    localStorage.setItem('LCCC_STARTED', hasStarted);
-  }, [hasStarted]);
+  // 3. Calculate initial Time Left purely based on the absolute End Time vs NOW
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedEnd = localStorage.getItem('LCCC_END_TIME');
+    if (savedEnd) {
+      const remainingSeconds = Math.floor((parseInt(savedEnd, 10) - Date.now()) / 1000);
+      return remainingSeconds > 0 ? remainingSeconds : 0;
+    }
+    return 90 * 60; // Default 90 minutes if not started
+  });
 
-  // 5. The actual countdown timer logic
+  // 4. The Bulletproof Interval Timer
   useEffect(() => {
-    if (!hasStarted || timeLeft <= 0) return;
+    if (!hasStarted || !endTime || timeLeft <= 0) return;
 
-    const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+    const timerId = setInterval(() => {
+      // Calculate real-time difference every second
+      const remainingSeconds = Math.floor((endTime - Date.now()) / 1000);
+
+      if (remainingSeconds <= 0) {
+        setTimeLeft(0);
+        clearInterval(timerId);
+        // (Optional Future Addition: Auto-submit the contest to backend here when time is 0)
+      } else {
+        setTimeLeft(remainingSeconds);
+      }
+    }, 1000);
+
     return () => clearInterval(timerId);
-  }, [hasStarted, timeLeft]);
+  }, [hasStarted, endTime, timeLeft]);
 
-  // ==========================================
-  // --- NEW ENTERPRISE FUNCTIONS GO HERE ---
   // ==========================================
 
   const handleStartContest = async () => {
     try {
-      // 1. Tell Spring Boot to update status to IN_PROGRESS
-      // NOTE: Ensure your CompanyContestResponse DTO named the ID field 'contestId'
       await fetch(`http://localhost:8080/api/contests/${contestData.contestId}/status?status=IN_PROGRESS`, {
         method: 'PUT'
       });
 
-      // 2. Start the React timer UI
+      // Calculate absolute end time (Now + 90 mins)
+      const targetEndTime = Date.now() + (90 * 60 * 1000);
+
+      // Save state to memory
+      localStorage.setItem('LCCC_STARTED', 'true');
+      localStorage.setItem('LCCC_END_TIME', targetEndTime.toString());
+
+      // Update React State
+      setEndTime(targetEndTime);
       setHasStarted(true);
+      setTimeLeft(90 * 60);
+
     } catch (error) {
       console.error("Failed to start contest on backend", error);
     }
@@ -57,25 +79,21 @@ export default function ActiveContest({ contestData }) {
   const handleQuitContest = async () => {
     try {
       if (hasStarted) {
-        // 1. Tell Spring Boot we abandoned ship
         await fetch(`http://localhost:8080/api/contests/${contestData.contestId}/status?status=ABANDONED`, {
           method: 'PUT'
         });
       }
 
-      // 2. Wipe the browser memory clean so the next contest starts fresh
+      // Wipe the memory clean (Notice we wipe LCCC_END_TIME now)
       localStorage.removeItem('LCCC_DATA');
-      localStorage.removeItem('LCCC_TIMER');
+      localStorage.removeItem('LCCC_END_TIME');
       localStorage.removeItem('LCCC_STARTED');
 
-      // 3. Go back to Home
       navigate('/');
     } catch (error) {
       console.error("Failed to quit contest", error);
     }
   };
-
-  // ==========================================
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -110,14 +128,15 @@ export default function ActiveContest({ contestData }) {
             </h1>
             <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
               {hasStarted
-                ? "Contest is live! Complete all 4 problems before the timer expires."
+                ? timeLeft === 0
+                  ? "Time is up! The contest has ended."
+                  : "Contest is live! Complete all 4 problems before the timer expires."
                 : "Your problems are ready. Start the timer when you are ready to begin."}
             </p>
           </div>
 
           <div className="mt-4 md:mt-0 flex flex-col items-end">
             {!hasStarted ? (
-              // --- UPDATED START BUTTON ---
               <button
                 onClick={handleStartContest}
                 className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white text-lg font-bold rounded-xl shadow-md transition-all transform hover:scale-105"
@@ -159,13 +178,15 @@ export default function ActiveContest({ contestData }) {
               </>
             );
 
+            // Row logic updated: If time is up (0), they can no longer click the links!
+            const isRowActive = hasStarted && timeLeft > 0;
             const rowClasses = `flex items-center justify-between p-5 transition-all block w-full
               odd:bg-[#FFFFFF] even:bg-[#FAFAFA]
               dark:odd:bg-[#1A1A1A] dark:even:bg-[#272727] dark:text-white
-              ${!hasStarted ? 'opacity-80' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a2a2a]'}
+              ${!isRowActive ? 'opacity-80' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-[#2a2a2a]'}
             `;
 
-            return hasStarted ? (
+            return isRowActive ? (
               <a
                 key={index}
                 href={`https://leetcode.com/problems/${problem.titleSlug}/`}
@@ -186,7 +207,6 @@ export default function ActiveContest({ contestData }) {
 
         {/* Quit Contest Button */}
         <div className="mt-12 text-center">
-          {/* --- UPDATED QUIT BUTTON --- */}
           <button
             onClick={handleQuitContest}
             className={`px-8 py-3 text-lg font-bold rounded-xl transition-colors focus:outline-none shadow-sm ${
