@@ -2,12 +2,15 @@ package com.lcbackend.custom_contest_backend.controller;
 
 import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
+import com.lcbackend.custom_contest_backend.dto.HistoryResponseDto;
 import com.lcbackend.custom_contest_backend.model.ContestStatus;
 import com.lcbackend.custom_contest_backend.service.ContestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/contests")
@@ -37,5 +40,16 @@ public class ContestController {
 
         contestService.updateContestState(id, status);
         return ResponseEntity.ok().build();
+    }
+
+
+    @GetMapping("/history/{username}")
+    public ResponseEntity<List<HistoryResponseDto>> getContestHistory(@PathVariable String username){
+        try {
+            List<HistoryResponseDto> history = contestService.getContestHistory(username);
+            return ResponseEntity.ok(history);
+        } catch (Exception e){
+            return ResponseEntity.status(500).build();
+        }
     }
 }

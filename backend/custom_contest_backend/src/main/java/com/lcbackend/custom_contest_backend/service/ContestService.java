@@ -3,11 +3,13 @@ package com.lcbackend.custom_contest_backend.service;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
 import com.lcbackend.custom_contest_backend.dto.ContestProblemDto;
+import com.lcbackend.custom_contest_backend.dto.HistoryResponseDto;
 import com.lcbackend.custom_contest_backend.model.*;
 import com.lcbackend.custom_contest_backend.repository.CompanyProblemRepository;
 import com.lcbackend.custom_contest_backend.repository.ContestRepository;
 import com.lcbackend.custom_contest_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +26,7 @@ public class ContestService {
     private final ContestRepository contestRepository;
 
     @Transactional
-    public CompanyContestResponse createCompanyContest(CompanyContestRequest request) {
+    public CompanyContestResponse createCompanyContest(@NonNull CompanyContestRequest request) {
         String companyLower = request.getCompany().toLowerCase().trim();
         String reqUsername = request.getUsername();
 
@@ -39,7 +41,6 @@ public class ContestService {
             return userRepository.save(newUser);
         });
 
-        // 2. Fetch problems from the optimized database layer
         List<CompanyProblem> easyProblems = companyProblemRepository
                 .findRandomProblemsByCompanyAndDifficulty(companyLower, "Easy", 1);
         List<CompanyProblem> mediumProblems = companyProblemRepository
@@ -59,9 +60,9 @@ public class ContestService {
 
         Contest contest = new Contest();
         contest.setUser(user);
-        contest.setContestType(ContestType.COMPANY); // Now uses the Enum
+        contest.setContestType(ContestType.COMPANY);
         contest.setDurationMinutes(90);
-        contest.setTargetCompany(companyLower);      // Saves "google" strictly for DB analytics
+        contest.setTargetCompany(companyLower);
 
         String formattedCompany = request.getCompany().substring(0, 1).toUpperCase() + request.getCompany().substring(1).toLowerCase();
         contest.setTitle(formattedCompany + " Assessment");
@@ -76,12 +77,9 @@ public class ContestService {
             problem.setDifficulty(cp.getDifficulty());
             problem.setProblemOrder(order++);
 
-            // --- FIXED: Use Enum instead of String ---
             problem.setStatus(ProblemStatus.PENDING);
 
-            // --- FIXED: Inject the topics for your Analytics engine ---
             problem.setTopics(cp.getTopics());
-
 
             contest.getContestProblems().add(problem);
         }
@@ -116,5 +114,25 @@ public class ContestService {
         }
 
         contestRepository.save(contest);
+    }
+
+    public List<HistoryResponseDto> getContestHistory(String username){
+        List<Contest> contests = contestRepository.findByUser_UsernameOrderByStartedAtDesc(username);
+        List<HistoryResponseDto> history = new ArrayList<>();
+        for(Contest contest : contests){
+            HistoryResponseDto historyResponse = new HistoryResponseDto();
+            historyResponse.setContestId(contest.getId());
+            historyResponse.setTitle(contest.getTitle());
+            historyResponse.setContestType(contest.getContestType());
+            historyResponse.setStatus(contest.getStatus());
+            historyResponse.setStartedAt(contest.getStartedAt());
+            historyResponse.setTotalProblems(contest.getContestProblems().size());
+            int solvedProblems = (int)contest.getContestProblems().stream().filter(contestProblem -> {
+                 return contestProblem.getStatus() == ProblemStatus.SOLVED;
+            }).count(); //casting to int bcos count() returns long
+            historyResponse.setSolvedProblems(solvedProblems);
+            history.add(historyResponse);
+        }
+        return history;
     }
 }
