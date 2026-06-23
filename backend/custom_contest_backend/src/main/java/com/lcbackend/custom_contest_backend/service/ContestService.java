@@ -76,7 +76,7 @@ public class ContestService {
             problem.setTitleSlug(cp.getTitleSlug());
             problem.setDifficulty(cp.getDifficulty());
             problem.setProblemOrder(order++);
-
+            problem.setTitle(cp.getTitle());
             problem.setStatus(ProblemStatus.PENDING);
 
             problem.setTopics(cp.getTopics());
@@ -92,7 +92,8 @@ public class ContestService {
                 .map(entity -> new ContestProblemDto(
                         entity.getTitle(),
                         entity.getTitleSlug(),
-                        entity.getDifficulty()
+                        entity.getDifficulty(),
+                        ProblemStatus.PENDING
                 ))
                 .collect(Collectors.toList());
 
@@ -120,17 +121,29 @@ public class ContestService {
         List<Contest> contests = contestRepository.findByUser_UsernameOrderByStartedAtDesc(username);
         List<HistoryResponseDto> history = new ArrayList<>();
         for(Contest contest : contests){
+            int solvedProblems = 0;
             HistoryResponseDto historyResponse = new HistoryResponseDto();
             historyResponse.setContestId(contest.getId());
             historyResponse.setTitle(contest.getTitle());
             historyResponse.setContestType(contest.getContestType());
             historyResponse.setStatus(contest.getStatus());
             historyResponse.setStartedAt(contest.getStartedAt());
+
+            List<ContestProblemDto> contestProblems = new ArrayList<>();
+            for(ContestProblem contestProblem : contest.getContestProblems()){
+                ContestProblemDto newContestProblem = new ContestProblemDto();
+                if(contestProblem.getStatus() == ProblemStatus.SOLVED){
+                    ++solvedProblems;
+                }
+                newContestProblem.setTitle(contestProblem.getTitle());
+                newContestProblem.setTitleSlug(contestProblem.getTitleSlug());
+                newContestProblem.setDifficulty(contestProblem.getDifficulty());
+                newContestProblem.setStatus(contestProblem.getStatus());
+                contestProblems.add(newContestProblem);
+            }
             historyResponse.setTotalProblems(contest.getContestProblems().size());
-            int solvedProblems = (int)contest.getContestProblems().stream().filter(contestProblem -> {
-                 return contestProblem.getStatus() == ProblemStatus.SOLVED;
-            }).count(); //casting to int bcos count() returns long
             historyResponse.setSolvedProblems(solvedProblems);
+            historyResponse.setContestProblems(contestProblems);
             history.add(historyResponse);
         }
         return history;

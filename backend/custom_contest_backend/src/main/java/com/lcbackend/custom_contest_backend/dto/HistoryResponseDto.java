@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Data
@@ -18,6 +19,7 @@ public class HistoryResponseDto {
     private ContestType contestType;
     private ContestStatus status;
     private LocalDateTime startedAt;
+    private List<ContestProblemDto> contestProblems;
     private int totalProblems;
     private int solvedProblems;
 }

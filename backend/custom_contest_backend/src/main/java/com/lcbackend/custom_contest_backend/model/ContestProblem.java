@@ -27,6 +27,8 @@ public class ContestProblem {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Contest contest;
 
+    private String title;
+
     @Column(nullable = false)
     private String titleSlug;
 
