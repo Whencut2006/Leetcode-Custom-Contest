@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import GreenTick from '../components/ui/GreenTick';
 import RedCross from '../components/ui/RedCross';
+import { Link } from 'react-router-dom';
 
 export default function History() {
     const { theme, username } = useTheme();
@@ -10,12 +11,10 @@ export default function History() {
     const [error, setError] = useState(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
-    
     const filteredHistory = historyData.filter(
         contest => contest.status === "COMPLETED" || contest.status === "ABANDONED"
     );
 
-    
     const handleWheel = (e) => {
         if (e.deltaY > 30) {
             setActiveIndex(prev => Math.min(prev + 1, filteredHistory.length - 1));
@@ -55,7 +54,6 @@ export default function History() {
         fetchHistory();
     }, [username]);
 
-    
     if (isLoading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center text-black dark:text-white">
@@ -88,103 +86,119 @@ export default function History() {
     }
 
     return (
-        <div
-            className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000"
-            onWheel={handleWheel}
-        >
-            {/* Map over the FILTERED history so the indices perfectly match the wheel math */}
-            {filteredHistory.map((contest, index) => {
+        <div className="flex items-center justify-center w-full max-w-5xl mx-auto px-4">
+            <div className="mr-6 md:mr-12 flex-shrink-0 z-50">
+                <Link
+                    to="/"
+                    className={`group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-xl ${theme === 'dark'
+                            ? 'bg-[#242424] text-gray-300 hover:text-white border border-gray-800'
+                            : 'bg-white text-gray-600 hover:text-black border border-gray-200'
+                        }`}
+                >
+                    {/* SVG Arrow that slides left on hover */}
+                    <svg className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Back
+                </Link>
+            </div>
+            <div
+                className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000"
+                onWheel={handleWheel}
+            >
+                {/* Map over the FILTERED history so the indices perfectly match the wheel math */}
+                {filteredHistory.map((contest, index) => {
 
-                const offset = index - activeIndex;
+                    const offset = index - activeIndex;
 
-                if (Math.abs(offset) > 2) return null;
+                    if (Math.abs(offset) > 2) return null;
 
-                const cardStyle = {
-                    transform: `translateY(${offset * 140}px) scale(${1 - Math.abs(offset) * 0.15})`,
-                    opacity: 1 - Math.abs(offset) * 0.4,
-                    zIndex: 50 - Math.abs(offset),
-                    pointerEvents: offset === 0 ? 'auto' : 'none',
-                };
+                    const cardStyle = {
+                        transform: `translateY(${offset * 140}px) scale(${1 - Math.abs(offset) * 0.15})`,
+                        opacity: 1 - Math.abs(offset) * 0.4,
+                        zIndex: 50 - Math.abs(offset),
+                        pointerEvents: offset === 0 ? 'auto' : 'none',
+                    };
 
-                return (
-                    <div
-                        key={contest.contestId}
-                        style={cardStyle}
-                        className="absolute w-full transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
-                    >
-                        <div className="flex flex-col justify-between h-[480px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-100 dark:border-gray-800">
+                    return (
+                        <div
+                            key={contest.contestId}
+                            style={cardStyle}
+                            className="absolute w-full transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]"
+                        >
+                            <div className="flex flex-col justify-between h-[480px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-100 dark:border-gray-800">
 
-                            {/* --- TOP SECTION --- */}
-                            <div>
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                                            {contest.title}
-                                        </h2>
-                                        <span className="inline-block mt-1 text-xs font-bold tracking-widest text-gray-400 uppercase">
-                                            {contest.contestType} CONTEST
-                                        </span>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1.5 rounded-full shadow-inner">
-                                            {contest.solvedProblems} / {contest.totalProblems} Solved
+                                {/* --- TOP SECTION --- */}
+                                <div>
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                                                {contest.title}
+                                            </h2>
+                                            <span className="inline-block mt-1 text-xs font-bold tracking-widest text-gray-400 uppercase">
+                                                {contest.contestType} CONTEST
+                                            </span>
                                         </div>
-                                        <div className="mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                                            {contest.status}
+                                        <div className="text-right">
+                                            <div className="text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1.5 rounded-full shadow-inner">
+                                                {contest.solvedProblems} / {contest.totalProblems} Solved
+                                            </div>
+                                            <div className="mt-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                                                {contest.status}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <hr className="border-gray-200 dark:border-gray-800 mb-4" />
+                                    <hr className="border-gray-200 dark:border-gray-800 mb-4" />
 
-                                {/* 2. The Zebra-Striped Problem List */}
-                                <div className="flex flex-col gap-1.5">
-                                    {contest.contestProblems.map((problem) => (
+                                    {/* 2. The Zebra-Striped Problem List (NOW WITH INTERNAL SCROLL) */}
+                                    <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[280px] pr-2 pb-2 custom-scrollbar">
+                                        {contest.contestProblems.map((problem) => (
 
-                                        
-                                        <a
-                                            key={problem.titleSlug}
-                                            href={`https://leetcode.com/problems/${problem.titleSlug}/`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="group flex items-center justify-between p-3.5 rounded-xl even:bg-gray-50 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent transition-colors hover:bg-gray-100 dark:hover:bg-[#2f2f2f]"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-5 h-5 relative flex-shrink-0">
-                                                    {problem.status === 'SOLVED' ? <GreenTick /> : <RedCross />}
+                                            <a
+                                                key={problem.titleSlug}
+                                                href={`https://leetcode.com/problems/${problem.titleSlug}/`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="group flex items-center justify-between p-3.5 rounded-xl even:bg-gray-50 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent transition-colors hover:bg-gray-100 dark:hover:bg-[#2f2f2f]"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-7 h-7 text-xl relative flex-shrink-0">
+                                                        {problem.status === 'SOLVED' ? <GreenTick /> : <RedCross />}
+                                                    </div>
+
+                                                    <span className="font-semibold text-[15px] text-gray-800 dark:text-gray-200">
+                                                        {problem.title}
+                                                    </span>
                                                 </div>
 
-                                                <span className="font-semibold text-[15px] text-gray-800 dark:text-gray-200">
-                                                    {problem.title}
+                                                <span className={`text-sm font-bold ${problem.difficulty === 'Easy' ? 'text-[#00b8a3]' :
+                                                        problem.difficulty === 'Medium' ? 'text-[#ffc01e]' :
+                                                            'text-[#ff375f]'
+                                                    }`}>
+                                                    {problem.difficulty}
                                                 </span>
-                                            </div>
+                                            </a>
 
-                                            <span className={`text-sm font-bold ${problem.difficulty === 'Easy' ? 'text-[#00b8a3]' :
-                                                    problem.difficulty === 'Medium' ? 'text-[#ffc01e]' :
-                                                        'text-[#ff375f]'
-                                                }`}>
-                                                {problem.difficulty}
-                                            </span>
-                                        </a>
-
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
 
-                            {/* --- BOTTOM SECTION --- */}
-                            <div className="text-right text-gray-400 dark:text-gray-500 text-[13px] font-medium mt-4">
-                                {contest.startedAt
-                                    ? new Date(contest.startedAt).toLocaleString('en-US', {
-                                        weekday: 'short', month: 'short', day: 'numeric',
-                                        year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
-                                    })
-                                    : 'Not Started'}
-                            </div>
+                                {/* --- BOTTOM SECTION --- */}
+                                <div className="text-right text-gray-400 dark:text-gray-500 text-[13px] font-medium mt-4">
+                                    {contest.startedAt
+                                        ? new Date(contest.startedAt).toLocaleString('en-US', {
+                                            weekday: 'short', month: 'short', day: 'numeric',
+                                            year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false
+                                        })
+                                        : 'Not Started'}
+                                </div>
 
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 }
