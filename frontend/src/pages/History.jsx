@@ -1,22 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-
-// --- SVG Icons ---
-const GreenTick = () => (
-    <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="check"
-        className="absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2"
-        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512">
-        <path fill="green" d="M441 103c9.4 9.4 9.4 24.6 0 33.9L177 401c-9.4 9.4-24.6 9.4-33.9 0L7 265c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l119 119L407 103c9.4-9.4 24.6-9.4 33.9 0z"></path>
-    </svg>
-);
-
-const RedCross = () => (
-    <svg aria-hidden="true" focusable="false" data-prefix="far" data-icon="xmark"
-        className="absolute h-[1em] -translate-x-1/2 -translate-y-1/2 align-[-0.125em] left-1/2 top-1/2"
-        role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512">
-        <path fill="red" d="M310.6 361.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L160 301.3 54.6 406.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L114.7 256 9.4 150.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 210.7l105.4-105.4c12.5-12.5 32.8-12.5 45.3 0s12.5 32.8 0 45.3L205.3 256l105.3 105.4z"></path>
-    </svg>
-);
+import GreenTick from '../components/ui/GreenTick';
+import RedCross from '../components/ui/RedCross';
 
 export default function History() {
     const { theme, username } = useTheme();
@@ -25,12 +10,12 @@ export default function History() {
     const [error, setError] = useState(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
-    // 1. Derived State: Filter the data ONCE before rendering or calculating lengths
+    
     const filteredHistory = historyData.filter(
         contest => contest.status === "COMPLETED" || contest.status === "ABANDONED"
     );
 
-    // 2. Scroll Wheel Logic (Using filteredHistory bounds)
+    
     const handleWheel = (e) => {
         if (e.deltaY > 30) {
             setActiveIndex(prev => Math.min(prev + 1, filteredHistory.length - 1));
@@ -39,7 +24,6 @@ export default function History() {
         }
     };
 
-    // 3. Keyboard Logic (Using filteredHistory bounds)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'ArrowDown' && activeIndex < filteredHistory.length - 1) {
@@ -52,7 +36,6 @@ export default function History() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeIndex, filteredHistory.length]);
 
-    // 4. Data Fetching
     useEffect(() => {
         const fetchHistory = async () => {
             if (!username) return;
@@ -72,8 +55,7 @@ export default function History() {
         fetchHistory();
     }, [username]);
 
-    // --- RENDER BLOCKS ---
-
+    
     if (isLoading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center text-black dark:text-white">
@@ -159,7 +141,7 @@ export default function History() {
                                 <div className="flex flex-col gap-1.5">
                                     {contest.contestProblems.map((problem) => (
 
-                                        // The ENTIRE row is now the <a> tag with 'group' class
+                                        
                                         <a
                                             key={problem.titleSlug}
                                             href={`https://leetcode.com/problems/${problem.titleSlug}/`}
