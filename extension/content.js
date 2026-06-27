@@ -1,4 +1,3 @@
-console.log("Welcome to Leetcode Custom Contest Creator!");
 
 // Auth pre-fetcher (runs immediately in the bg on page load);
 async function fetchLeetCodeAuth() {
@@ -24,15 +23,12 @@ async function fetchLeetCodeAuth() {
         });
         
         const data = await response.json();
-        // console.log("LCCC Auth Validated in Background:", data.data.userStatus);
         return data.data.userStatus;
     } catch (error) {
-        // console.error("LCCC Auth Check Failed:", error);
         return { isSignedIn: false, username: null };
     }
 }
 
-// Storing Promise immediately by not awaiting and lettign it run in the bg
 const authPromise = fetchLeetCodeAuth();
 
 

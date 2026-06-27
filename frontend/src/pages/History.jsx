@@ -38,38 +38,55 @@ export default function History() {
     useEffect(() => {
         const fetchHistory = async () => {
             if (!username) return;
+            const cachedData = sessionStorage.getItem('lccc_history_cache');
+
+            if (cachedData) {
+                try {
+                    const parsedData = JSON.parse(cachedData);
+                    console.log(parsedData);
+                    setHistoryData(parsedData); 
+                    setIsLoading(false);       
+                    return;                     
+                } catch (error) {
+                    sessionStorage.removeItem('lccc_history_cache');
+                }
+            }
+
             try {
                 const response = await fetch(`http://localhost:8080/api/contests/history/${username}`);
                 if (!response.ok) {
                     throw new Error(`Request failed with status ${response.status}`);
                 }
                 const data = await response.json();
+
                 setHistoryData(data);
+                sessionStorage.setItem('lccc_history_cache', JSON.stringify(data));
+
             } catch (err) {
                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
         };
+
         fetchHistory();
     }, [username]);
-
+    // Skeleton UI
     if (isLoading) {
         return (
-            // 1. Exact same parent wrapper as the loaded state to prevent layout shifting
             <div className="flex items-center justify-center w-full max-w-5xl mx-auto px-4 min-h-[600px]">
-                
-                {/* 2. A "Ghost" Back Button to keep the flexbox spacing identical */}
+
+                //simulatin back button
                 <div className="mr-6 md:mr-12 flex-shrink-0 z-50 opacity-50 pointer-events-none">
                     <div className="w-24 h-10 rounded-full bg-gray-200 dark:bg-[#2a2a2a] animate-pulse"></div>
                 </div>
 
-                {/* 3. The 3D Carousel Stage */}
+                //carousel card
                 <div className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000">
-                    
+
                     {/* 4. Map over a dummy array of 3 cards to create the 3D depth */}
                     {[0, 1, 2].map((index) => {
-                        const offset = index; // activeIndex is locked to 0 while loading
+                        const offset = index; 
 
                         const cardStyle = {
                             transform: `translateY(${offset * 140}px) scale(${1 - Math.abs(offset) * 0.15})`,
@@ -120,7 +137,6 @@ export default function History() {
                                         </div>
                                     </div>
 
-                                    {/* --- SKELETON BOTTOM SECTION --- */}
                                     {/* Fake Timestamp */}
                                     <div className="flex justify-end mt-4">
                                         <div className="h-3 bg-gray-200 dark:bg-[#2a2a2a] rounded-md w-32 animate-pulse"></div>
@@ -138,6 +154,7 @@ export default function History() {
     if (error !== null) {
         return (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex w-3/4 h-24 overflow-hidden bg-[ivory] shadow-lg max-w-96 rounded-xl dark:bg-[ivory]">
+
                 <svg xmlns="http://www.w3.org/2000/svg" height="96" width="16">
                     <path strokeLinecap="round" strokeWidth="2" stroke="indianred" fill="indianred" d="M 8 0 Q 4 4.8, 8 9.6 T 8 19.2 Q 4 24, 8 28.8 T 8 38.4 Q 4 43.2, 8 48 T 8 57.6 Q 4 62.4, 8 67.2 T 8 76.8 Q 4 81.6, 8 86.4 T 8 96 L 0 96 L 0 0 Z"></path>
                 </svg>
@@ -160,8 +177,8 @@ export default function History() {
                 <Link
                     to="/"
                     className={`group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-xl ${theme === 'dark'
-                            ? 'bg-[#242424] text-gray-300 hover:text-white border border-gray-800'
-                            : 'bg-white text-gray-600 hover:text-black border border-gray-200'
+                        ? 'bg-[#242424] text-gray-300 hover:text-white border border-gray-800'
+                        : 'bg-white text-gray-600 hover:text-black border border-gray-200'
                         }`}
                 >
                     {/* SVG Arrow that slides left on hover */}
@@ -175,7 +192,6 @@ export default function History() {
                 className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000"
                 onWheel={handleWheel}
             >
-                {/* Map over the FILTERED history so the indices perfectly match the wheel math */}
                 {filteredHistory.map((contest, index) => {
 
                     const offset = index - activeIndex;
@@ -197,7 +213,6 @@ export default function History() {
                         >
                             <div className="flex flex-col justify-between h-[480px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-100 dark:border-gray-800">
 
-                                {/* --- TOP SECTION --- */}
                                 <div>
                                     <div className="flex justify-between items-start mb-4">
                                         <div>
@@ -220,7 +235,6 @@ export default function History() {
 
                                     <hr className="border-gray-200 dark:border-gray-800 mb-4" />
 
-                                    {/* 2. The Zebra-Striped Problem List (NOW WITH INTERNAL SCROLL) */}
                                     <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[280px] pr-2 pb-2 custom-scrollbar">
                                         {contest.contestProblems.map((problem) => (
 
@@ -242,8 +256,8 @@ export default function History() {
                                                 </div>
 
                                                 <span className={`text-sm font-bold ${problem.difficulty === 'Easy' ? 'text-[#00b8a3]' :
-                                                        problem.difficulty === 'Medium' ? 'text-[#ffc01e]' :
-                                                            'text-[#ff375f]'
+                                                    problem.difficulty === 'Medium' ? 'text-[#ffc01e]' :
+                                                        'text-[#ff375f]'
                                                     }`}>
                                                     {problem.difficulty}
                                                 </span>
@@ -253,7 +267,6 @@ export default function History() {
                                     </div>
                                 </div>
 
-                                {/* --- BOTTOM SECTION --- */}
                                 <div className="text-right text-gray-400 dark:text-gray-500 text-[13px] font-medium mt-4">
                                     {contest.startedAt
                                         ? new Date(contest.startedAt).toLocaleString('en-US', {

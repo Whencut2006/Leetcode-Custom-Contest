@@ -138,6 +138,7 @@ export default function CompanyContest() {
                 <img
                 src={getImageUrl(`${company.id}.png`)}
                 alt={`${company.name} Logo`}
+                draggable = "false"
                 className="h-10 w-auto mb-5 object-contain"
                 />
                 <h3 className={`text-xl font-bold mb-2 ${

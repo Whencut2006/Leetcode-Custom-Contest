@@ -43,6 +43,8 @@ export default function ActiveContest({ contestData }) {
         setTimeLeft(0);
         clearInterval(timerId);
         // (Optional Future Addition: Auto-submit the contest to backend here when time is 0)
+        // destroying cache on natural timeout
+        sessionStorage.removeItem('lccc_history_cache');
       } else {
         setTimeLeft(remainingSeconds);
       }
@@ -88,6 +90,7 @@ export default function ActiveContest({ contestData }) {
       localStorage.removeItem('LCCC_DATA');
       localStorage.removeItem('LCCC_END_TIME');
       localStorage.removeItem('LCCC_STARTED');
+      sessionStorage.removeItem('lccc_history_cache');
 
       navigate('/');
     } catch (error) {
@@ -217,7 +220,7 @@ export default function ActiveContest({ contestData }) {
           })}
         </div>
 
-        {/* Quit Contest Button */}
+        {/* Exit Contest Button */}
         <div className="mt-10 text-center">
           <button
             onClick={handleQuitContest}
@@ -226,7 +229,7 @@ export default function ActiveContest({ contestData }) {
                 : 'bg-gray-100 text-red-600 hover:bg-gray-200'
               }`}
           >
-            Quit Contest
+            Exit Contest
           </button>
         </div>
 

@@ -5,7 +5,7 @@ import CompanyContest from "./pages/CompanyContest";
 import CustomContest from "./pages/CustomContest";
 import History from "./pages/History";
 import Analytics from "./pages/Analytics";
-// import './App.css';
+import './App.css';
 import './index.css';
 import { useTheme } from "./context/ThemeContext";
 function App() {
