@@ -1,9 +1,6 @@
 package com.lcbackend.custom_contest_backend.service;
 
-import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
-import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
-import com.lcbackend.custom_contest_backend.dto.ContestProblemDto;
-import com.lcbackend.custom_contest_backend.dto.HistoryResponseDto;
+import com.lcbackend.custom_contest_backend.dto.*;
 import com.lcbackend.custom_contest_backend.model.*;
 import com.lcbackend.custom_contest_backend.repository.CompanyProblemRepository;
 import com.lcbackend.custom_contest_backend.repository.ContestRepository;
@@ -13,6 +10,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -147,5 +145,33 @@ public class ContestService {
             history.add(historyResponse);
         }
         return history;
+    }
+
+    @Transactional
+    public void submitContest(Long contestId, ContestSubmitRequest request){
+        Contest contest = contestRepository.findById(contestId).orElseThrow(
+                () -> new RuntimeException("Contest Not Found")
+        );
+
+        List<String> solvedSlugs = request.getSolvedSlugs();
+        if(solvedSlugs == null || solvedSlugs.isEmpty()){
+            contest.setStatus(ContestStatus.ABANDONED);
+        }
+        else{
+            contest.setStatus(ContestStatus.COMPLETED);
+        }
+
+        contest.setEndedAt(LocalDateTime.now());
+
+        if(solvedSlugs != null && !solvedSlugs.isEmpty()){
+            for(ContestProblem problem : contest.getContestProblems()){
+                if(solvedSlugs.contains(problem.getTitleSlug())){
+                    problem.setStatus(ProblemStatus.SOLVED);
+                }
+            }
+        }
+
+        contestRepository.save(contest);
+
     }
 }

@@ -1,9 +1,9 @@
 
-// Auth pre-fetcher (runs immediately in the bg on page load);
+//Auth pre-fetcher (runs immediately in the bg on page load);
 async function fetchLeetCodeAuth() {
     try {
         const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1] || '';
-        
+
         const response = await fetch('https://leetcode.com/graphql', {
             method: 'POST',
             headers: {
@@ -21,18 +21,22 @@ async function fetchLeetCodeAuth() {
                 `
             })
         });
-        
+
         const data = await response.json();
-        return data.data.userStatus;
+        return {
+            isSignedIn: data.data.userStatus.isSignedIn,
+            username: data.data.userStatus.username,
+            csrfToken: csrfToken
+        };
     } catch (error) {
-        return { isSignedIn: false, username: null };
+        return { isSignedIn: false, username: null, csrfToken: null };
     }
 }
 
 const authPromise = fetchLeetCodeAuth();
 
 
-function getThemeFromLeetcode(){
+function getThemeFromLeetcode() {
     const isDark = document.documentElement.classList.contains('dark');
     return isDark ? 'dark' : 'light';
 }
@@ -89,7 +93,7 @@ const observer = new MutationObserver((mutations) => {
             const hasContest = node.querySelector?.('a') !== null || node.tagName === 'A';
             if (hasContest) {
                 createCustomContestTab();
-                return; 
+                return;
             }
         }
     }
@@ -122,25 +126,24 @@ function createCustomContestTab() {
     customContestLink.setAttribute("data-custom-contest", "true");
 
     customContestListElement.appendChild(customContestLink);
-    
-   // click handler
+
+    // click handler
     customContestLink.addEventListener("click", async (event) => {
         event.preventDefault();
         document.title = "Leetcode - Custom Contest"
 
-        // 1. Await the Pre-fetched promise. (If they click 1 second after page load, this is 0ms!)
+        // 1. Await the Pre-fetched promise
         const userStatus = await authPromise;
-        
-        // if the user isn't signed in or if the usrname isn't available --> redirecting to login page
+
         if (!userStatus || !userStatus.isSignedIn || !userStatus.username) {
-            // console.log("Access Denied: User is not signed in to LeetCode.");
             window.location.href = "https://leetcode.com/accounts/login/";
             return;
         }
 
         const username = userStatus.username;
+        const csrfToken = userStatus.csrfToken;
 
-        // 3. Mount logic
+        // 2. Tab UI logic
         history.pushState(null, '', '?tab=custom-contest');
         const currentlyActiveTabs = document.querySelectorAll("li.nav-li-after");
         currentlyActiveTabs.forEach(tab => {
@@ -148,21 +151,41 @@ function createCustomContestTab() {
         });
         customContestListElement.classList.add("nav-li-after", "border-text-primary", "dark:border-text-primary");
 
-        const lcccIframe = document.getElementById("lccc-iframe");
         const theme = getThemeFromLeetcode();
+        let lcccIframe = document.getElementById("lccc-iframe");
 
+        // 3. THE BROADCASTER: Function to send the token securely
+        const transmitSecureData = function () {
+            this.contentWindow.postMessage(
+                {
+                    type: 'LCCC_INIT_DATA',
+                    csrfToken: csrfToken
+                },
+                '*'
+            );
+        };
+
+        // 4. Mount Logic
         if (lcccIframe) {
+            // case - 1 : iframe already exists
             lcccIframe.style.display = "block";
             document.body.style.overflow = "hidden";
-            lcccIframe.src = `${chrome.runtime.getURL("ui/index.html")}?theme=${theme}&user=${username}`;
+
+            // attach broadcaster and update src
+            lcccIframe.onload = transmitSecureData;
+            lcccIframe.src = chrome.runtime.getURL(`ui/index.html?theme=${theme}&user=${username}`);
             return;
         }
-        
-        const customContestIframe = document.createElement("iframe");
-        customContestIframe.id = "lccc-iframe";
-        customContestIframe.src = chrome.runtime.getURL(`ui/index.html?theme=${theme}&user=${username}`);
 
-        customContestIframe.style.cssText = `
+        // case - 2 : creating iframe for the first time
+        lcccIframe = document.createElement("iframe");
+        lcccIframe.id = "lccc-iframe";
+
+        // Attach broadcaster and set src
+        lcccIframe.onload = transmitSecureData;
+        lcccIframe.src = chrome.runtime.getURL(`ui/index.html?theme=${theme}&user=${username}`);
+
+        lcccIframe.style.cssText = `
             position: fixed; 
             top: 50px;       
             left: 0;
@@ -174,7 +197,7 @@ function createCustomContestTab() {
             display: block;
         `;
 
-        document.body.appendChild(customContestIframe);
+        document.body.appendChild(lcccIframe);
         document.body.style.overflow = "hidden";
     });
 

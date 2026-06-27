@@ -28,13 +28,12 @@ public class Contest {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    // --- IDENTITY ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ContestType contestType; // COMPANY or CUSTOM
+    private ContestType contestType;
 
     @Column(nullable = false)
-    private String title;            // e.g., "Google Assessment" or "Custom Graph Challenge"
+    private String title;
 
     private String targetCompany;    // e.g., "google" (Null if Custom Contest)
     private int durationMinutes;     // e.g., 90
@@ -50,6 +49,7 @@ public class Contest {
     private LocalDateTime endedAt;                         // When finished/quit
 
     @OneToMany(mappedBy = "contest", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @OrderBy("id ASC")
     @JsonIgnore
     private List<ContestProblem> contestProblems = new ArrayList<>();
 }

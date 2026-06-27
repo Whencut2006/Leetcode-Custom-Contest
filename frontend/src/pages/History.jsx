@@ -76,12 +76,10 @@ export default function History() {
         return (
             <div className="flex items-center justify-center w-full max-w-5xl mx-auto px-4 min-h-[600px]">
 
-                //simulatin back button
                 <div className="mr-6 md:mr-12 flex-shrink-0 z-50 opacity-50 pointer-events-none">
                     <div className="w-24 h-10 rounded-full bg-gray-200 dark:bg-[#2a2a2a] animate-pulse"></div>
                 </div>
 
-                //carousel card
                 <div className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000">
 
                     {/* 4. Map over a dummy array of 3 cards to create the 3D depth */}

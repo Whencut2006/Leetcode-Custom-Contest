@@ -18,9 +18,14 @@
         }
     ],
     "host_permissions": [
+        "*://leetcode.com/*",
         "http://localhost:8080/*",
         "https://*.ngrok-free.dev/*"
     ],
+
+    "background":{
+        "service_worker": "background.js"
+    },
     "web_accessible_resources": [
         {
             "resources": [

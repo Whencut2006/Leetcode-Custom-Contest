@@ -2,6 +2,7 @@ package com.lcbackend.custom_contest_backend.controller;
 
 import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
 import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
+import com.lcbackend.custom_contest_backend.dto.ContestSubmitRequest;
 import com.lcbackend.custom_contest_backend.dto.HistoryResponseDto;
 import com.lcbackend.custom_contest_backend.model.ContestStatus;
 import com.lcbackend.custom_contest_backend.service.ContestService;
@@ -51,5 +52,15 @@ public class ContestController {
         } catch (Exception e){
             return ResponseEntity.status(500).build();
         }
+    }
+
+    @PutMapping("/{id}/submit")
+    public ResponseEntity<String> submitContest(
+            @PathVariable Long id,
+            @RequestBody ContestSubmitRequest request) {
+
+        contestService.submitContest(id, request);
+
+        return ResponseEntity.ok("Contest submitted successfully");
     }
 }
