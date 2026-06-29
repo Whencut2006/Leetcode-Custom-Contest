@@ -128,7 +128,7 @@ export default function ActiveContest({ contestData }) {
             </h1>
             <p className={`font-medium ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
               {hasStarted
-                ? timeLeft === 0 ? "Time is up! The contest has ended." : "Contest is live! Complete all 4 problems before the timer expires."
+                ? timeLeft === 0 ? "Time is up! The contest has ended." : "Contest is live! Complete all problems before the timer expires."
                 : "Your problems are ready. Start the timer when you are ready to begin."}
             </p>
           </div>
