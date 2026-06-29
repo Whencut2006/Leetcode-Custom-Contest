@@ -9,8 +9,10 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompanyContestResponse {
+public class ContestResponse {
     private Long contestId;
+    private String title;
     private String company;
+    private int durationMinutes;
     private List<ContestProblemDto> problems;
 }

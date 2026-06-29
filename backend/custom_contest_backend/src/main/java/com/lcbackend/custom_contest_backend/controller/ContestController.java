@@ -1,9 +1,6 @@
 package com.lcbackend.custom_contest_backend.controller;
 
-import com.lcbackend.custom_contest_backend.dto.CompanyContestRequest;
-import com.lcbackend.custom_contest_backend.dto.CompanyContestResponse;
-import com.lcbackend.custom_contest_backend.dto.ContestSubmitRequest;
-import com.lcbackend.custom_contest_backend.dto.HistoryResponseDto;
+import com.lcbackend.custom_contest_backend.dto.*;
 import com.lcbackend.custom_contest_backend.model.ContestStatus;
 import com.lcbackend.custom_contest_backend.service.ContestService;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +21,22 @@ public class ContestController {
     @PostMapping("/company")
     public ResponseEntity<?> generateCompanyContest(@RequestBody CompanyContestRequest request) {
         try {
-            CompanyContestResponse response = contestService.createCompanyContest(request);
+            ContestResponse response = contestService.createCompanyContest(request);
             return ResponseEntity.ok(response);
 
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/custom")
+    public ResponseEntity<?> generateCustomContest(@RequestBody CustomContestRequest request){
+        try {
+            ContestResponse response = contestService.createCustomContest(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(e.getMessage());
