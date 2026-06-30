@@ -46,7 +46,7 @@ export default function Home() {
           {/* Module 1: Custom Contest */}
           <Link to="/custom-contest" className={cardClass}>
             <div className="flex items-center justify-between">
-              <span className={titleClass}>Custom Contest Builder</span>
+              <span className={titleClass}>Custom Contest </span>
               <svg className={arrowClass} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"></path>
               </svg>
