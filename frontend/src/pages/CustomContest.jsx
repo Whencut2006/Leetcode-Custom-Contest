@@ -119,10 +119,9 @@ const CustomDropdown = ({ options, value, onChange, isDifficulty, widthClass = "
                                         e.stopPropagation();
                                         if (!isDisabled) { onChange(opt.value); setIsOpen(false); }
                                     }}
-                                    // 🔥 EXACT TAILWIND FIX: Dynamic Red Hover States for Disabled Options
                                     className={`relative h-8 py-1.5 px-2 whitespace-nowrap flex items-center rounded select-none transition-colors duration-200 ${isDisabled
-                                            ? 'cursor-not-allowed text-[#ff375f] hover:bg-[#ff375f] hover:text-white'
-                                            : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-[#333333] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                                        ? 'cursor-not-allowed text-[#ff375f] hover:bg-[#ff375f] hover:text-white'
+                                        : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-[#333333] text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                                         }`}
                                 >
                                     {/* Notice: we ensure getDifficultyColor doesn't override the hover text color by adding !isDisabled */}
@@ -279,6 +278,26 @@ export default function CustomContest() {
         );
     }
 
+    if (error !== null) {
+        return (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 flex w-3/4 h-24 overflow-hidden bg-[ivory] shadow-lg max-w-96 rounded-xl dark:bg-[ivory]">
+
+                <svg xmlns="http://www.w3.org/2000/svg" height="96" width="16">
+                    <path strokeLinecap="round" strokeWidth="2" stroke="indianred" fill="indianred" d="M 8 0 Q 4 4.8, 8 9.6 T 8 19.2 Q 4 24, 8 28.8 T 8 38.4 Q 4 43.2, 8 48 T 8 57.6 Q 4 62.4, 8 67.2 T 8 76.8 Q 4 81.6, 8 86.4 T 8 96 L 0 96 L 0 0 Z"></path>
+                </svg>
+                <div className="mx-2.5 overflow-hidden w-full">
+                    <p className="mt-1.5 text-xl font-bold text-red-500 leading-8 mr-3 overflow-hidden text-ellipsis whitespace-nowrap">Error !</p>
+                    <p className="overflow-hidden leading-5 break-all text-red-500 max-h-10">{error}</p>
+                </div>
+                <button className="w-16 cursor-pointer focus:outline-none" onClick={() => setError(null)}>
+                    <svg className="w-7 h-7" fill="none" stroke="indianred" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="flex flex-col md:flex-row items-center justify-center w-full max-w-5xl mx-auto px-4 min-h-[600px] font-sans">
             <div className="mb-6 md:mb-0 md:mr-12 flex-shrink-0 z-0">
@@ -287,12 +306,6 @@ export default function CustomContest() {
                     Back
                 </Link>
             </div>
-
-            {error && (
-                <div className="absolute top-10 left-1/2 -translate-x-1/2 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-center shadow-lg">
-                    <span>{error}</span><button onClick={() => setError(null)} className="ml-4 font-bold hover:text-red-900">X</button>
-                </div>
-            )}
 
             <div className="relative w-full max-w-3xl mx-auto">
                 <div className="flex flex-col justify-between h-[540px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-100 dark:border-gray-800 transition-colors">

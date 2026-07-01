@@ -1,0 +1,32 @@
+
+
+services:
+  backend:
+    build: 
+      context: ./backend/custom_contest_backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # This is how we securely pass your Neon credentials 
+      # to the container without hardcoding them in the image
+      - SPRING_DATASOURCE_URL=${NEON_DB_URL}
+      - SPRING_DATASOURCE_USERNAME=${NEON_DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${NEON_DB_PASSWORD}
+    networks:
+      - lccc-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - lccc-network
+
+networks:
+  lccc-network:
+    driver: bridge
