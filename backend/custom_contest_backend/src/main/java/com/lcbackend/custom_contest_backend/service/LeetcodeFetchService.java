@@ -53,7 +53,7 @@ public class LeetcodeFetchService {
         int totalSavedOverall = 0;
 
         while (recordsRemaining) {
-            System.out.println("🌐 Requesting batch range: " + currentSkip + " to " + (currentSkip + pageSize));
+            System.out.println(" Requesting batch range: " + currentSkip + " to " + (currentSkip + pageSize));
 
             Map<String, Object> variables = new HashMap<>();
             variables.put("categorySlug", "algorithms");

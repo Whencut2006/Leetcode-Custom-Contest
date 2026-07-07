@@ -8,6 +8,9 @@ import com.lcbackend.custom_contest_backend.repository.ProblemRepository;
 import com.lcbackend.custom_contest_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -188,37 +191,41 @@ public class ContestService {
         contestRepository.save(contest);
     }
 
-    public List<HistoryResponseDto> getContestHistory(String username) {
-        List<Contest> contests = contestRepository.findByUser_UsernameOrderByStartedAtDesc(username);
-        List<HistoryResponseDto> history = new ArrayList<>();
-        for (Contest contest : contests) {
-            int solvedProblems = 0;
-            HistoryResponseDto historyResponse = new HistoryResponseDto();
-            historyResponse.setContestId(contest.getId());
-            historyResponse.setTitle(contest.getTitle());
-            historyResponse.setContestType(contest.getContestType());
-            historyResponse.setStatus(contest.getStatus());
-            historyResponse.setStartedAt(contest.getStartedAt());
+    public Page<HistoryResponseDto> getContestHistory(String username, int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
 
-            List<ContestProblemDto> contestProblems = new ArrayList<>();
-            for (ContestProblem contestProblem : contest.getContestProblems()) {
-                ContestProblemDto newContestProblem = new ContestProblemDto();
-                if (contestProblem.getStatus() == ProblemStatus.SOLVED) {
-                    ++solvedProblems;
-                }
-                newContestProblem.setTitle(contestProblem.getTitle());
-                newContestProblem.setTitleSlug(contestProblem.getTitleSlug());
-                newContestProblem.setDifficulty(contestProblem.getDifficulty());
-                newContestProblem.setStatus(contestProblem.getStatus());
-                contestProblems.add(newContestProblem);
+    Page<Contest> contestPage = contestRepository.findByUser_UsernameOrderByStartedAtDesc(username, pageable);
+
+    return contestPage.map(contest -> {
+        int solvedProblems = 0;
+        HistoryResponseDto historyResponse = new HistoryResponseDto();
+        historyResponse.setContestId(contest.getId());
+        historyResponse.setTitle(contest.getTitle());
+        historyResponse.setContestType(contest.getContestType());
+        historyResponse.setStatus(contest.getStatus());
+        historyResponse.setStartedAt(contest.getStartedAt());
+
+        List<ContestProblemDto> contestProblems = new ArrayList<>();
+
+        for (ContestProblem contestProblem : contest.getContestProblems()) {
+            ContestProblemDto newContestProblem = new ContestProblemDto();
+            if (contestProblem.getStatus() == ProblemStatus.SOLVED) {
+                ++solvedProblems;
             }
-            historyResponse.setTotalProblems(contest.getContestProblems().size());
-            historyResponse.setSolvedProblems(solvedProblems);
-            historyResponse.setContestProblems(contestProblems);
-            history.add(historyResponse);
+            newContestProblem.setTitle(contestProblem.getTitle());
+            newContestProblem.setTitleSlug(contestProblem.getTitleSlug());
+            newContestProblem.setDifficulty(contestProblem.getDifficulty());
+            newContestProblem.setStatus(contestProblem.getStatus());
+            contestProblems.add(newContestProblem);
         }
-        return history;
-    }
+        
+        historyResponse.setTotalProblems(contest.getContestProblems().size());
+        historyResponse.setSolvedProblems(solvedProblems);
+        historyResponse.setContestProblems(contestProblems);
+        
+        return historyResponse;
+    });
+}
 
     @Transactional
     public void submitContest(Long contestId, ContestSubmitRequest request) {

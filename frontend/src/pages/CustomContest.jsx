@@ -144,7 +144,10 @@ export default function CustomContest() {
     const [duration, setDuration] = useState('90');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [generatedContest, setGeneratedContest] = useState(null);
+    const [generatedContest, setGeneratedContest] = useState(() => {
+        const savedContest = localStorage.getItem('LCCC_DATA');
+        return savedContest ? JSON.parse(savedContest) : null;
+    });
 
     const [problems, setProblems] = useState([
         { difficulty: 'Easy', topic: 'array' },
@@ -233,6 +236,9 @@ export default function CustomContest() {
 
             if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
             const data = await response.json();
+
+            localStorage.setItem('LCCC_DATA', JSON.stringify(data));
+            
             setTimeout(() => {
                 setGeneratedContest(data);
                 setIsLoading(false);

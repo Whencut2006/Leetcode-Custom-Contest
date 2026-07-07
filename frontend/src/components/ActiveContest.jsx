@@ -88,7 +88,7 @@ export default function ActiveContest({ contestData }) {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            solvedSlugs: finalSolvedSlugs // Optional: send the array if your backend tracks which specific ones were solved
+            solvedSlugs: finalSolvedSlugs 
           })
         });
       }

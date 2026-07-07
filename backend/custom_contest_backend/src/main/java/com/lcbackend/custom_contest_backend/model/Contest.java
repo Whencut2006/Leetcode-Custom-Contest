@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -13,7 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "contests")
+@Table(name = "contests", indexes = {
+        @Index(name = "idx_contest_user", columnList = "user_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -51,5 +54,6 @@ public class Contest {
     @OneToMany(mappedBy = "contest", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     @OrderBy("id ASC")
     @JsonIgnore
+    @BatchSize(size = 25)
     private List<ContestProblem> contestProblems = new ArrayList<>();
 }

@@ -4,6 +4,7 @@ import com.lcbackend.custom_contest_backend.dto.*;
 import com.lcbackend.custom_contest_backend.model.ContestStatus;
 import com.lcbackend.custom_contest_backend.service.ContestService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -54,10 +55,14 @@ public class ContestController {
 
 
     @GetMapping("/history/{username}")
-    public ResponseEntity<List<HistoryResponseDto>> getContestHistory(@PathVariable String username){
+    public ResponseEntity<Page<HistoryResponseDto>> getContestHistory(
+            @PathVariable String username,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
         try {
-            List<HistoryResponseDto> history = contestService.getContestHistory(username);
-            return ResponseEntity.ok(history);
+            Page<HistoryResponseDto> historyPage = contestService.getContestHistory(username, page, size);
+            return ResponseEntity.ok(historyPage);
         } catch (Exception e){
             return ResponseEntity.status(500).build();
         }

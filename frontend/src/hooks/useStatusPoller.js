@@ -71,7 +71,7 @@ export const useStatusPoller = (username, contestStartTime, contestProblems, tim
     useEffect(() => {
         if (!username) return;
 
-        const POLLING_INTERVAL = 5 * 60 * 1000;
+        const POLLING_INTERVAL = 6 * 60 * 1000;
         const intervalId = setInterval(pollLeetCode, POLLING_INTERVAL);
 
         return () => clearInterval(intervalId);
