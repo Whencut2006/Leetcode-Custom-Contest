@@ -36,8 +36,7 @@ public class ContestProblem {
     private String difficulty;
 
     private int problemOrder; // 1, 2, 3, or 4
-
-    // --- ANALYTICS DATA ---
+    
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(columnDefinition = "text[]")
     private List<String> topics;

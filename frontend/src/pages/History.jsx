@@ -7,16 +7,17 @@ import { Link } from 'react-router-dom';
 export default function History() {
     const { theme, username } = useTheme();
     const [historyData, setHistoryData] = useState([]);
-    
-    // --- Pagination State ---
+
+    // Pagination State
     const [isLoading, setIsLoading] = useState(true); // For the massive skeleton
     const [isFetchingNext, setIsFetchingNext] = useState(false); // For the small circle loader
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
-    
+
     const [error, setError] = useState(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const initialLoadRef = useRef(true); // Tracks if we used cache on boot
+    const skipFetchRef = useRef(false);
 
     const filteredHistory = historyData.filter(
         contest => contest.status === "COMPLETED" || contest.status === "ABANDONED"
@@ -42,51 +43,74 @@ export default function History() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [activeIndex, filteredHistory.length]);
 
-    // ==========================================
-    // THE TRIGGER: Watch the activeIndex!
-    // If the user reaches the 3rd-to-last card, fetch the next page!
-    // ==========================================
+    // Pagination logic
     useEffect(() => {
         if (
-            filteredHistory.length > 0 && 
-            activeIndex >= filteredHistory.length - 3 && 
-            hasMore && 
-            !isFetchingNext && 
+            filteredHistory.length > 0 &&
+            activeIndex >= filteredHistory.length - 3 &&
+            hasMore &&
+            !isFetchingNext &&
             !isLoading
         ) {
             setPage(prev => prev + 1);
         }
     }, [activeIndex, filteredHistory.length, hasMore, isFetchingNext, isLoading]);
 
-    // ==========================================
-    // THE FETCH LOGIC (Pagination & Cache)
-    // ==========================================
+    //fetch logic (pagination and cache)
     useEffect(() => {
         const fetchHistory = async () => {
             if (!username) return;
 
-            // On the very first boot, check if we have cache
+            // 1. Check Cache
             if (initialLoadRef.current && page === 0) {
                 initialLoadRef.current = false;
                 const cachedData = sessionStorage.getItem('lccc_history_cache');
-                
+
                 if (cachedData) {
                     try {
-                        const parsedData = JSON.parse(cachedData);
-                        setHistoryData(parsedData);
-                        // Fast forward the page tracker so the NEXT fetch is correct
-                        setPage(Math.floor(parsedData.length / 20) - 1); 
+                        const parsed = JSON.parse(cachedData);
+
+                        // Fallback: Handle both the old array cache and our new object cache
+                        let historyArray = [];
+                        let cachedHasMore = false;
+
+                        if (Array.isArray(parsed)) {
+                            historyArray = parsed;
+                            // If it's the old array, we guess if there's more based on multiples of 20
+                            cachedHasMore = historyArray.length > 0 && historyArray.length % 20 === 0;
+                        } else {
+                            historyArray = parsed.data;
+                            cachedHasMore = parsed.hasMore;
+                        }
+
+                        setHistoryData(historyArray);
+                        setHasMore(cachedHasMore); // THE FIX: Sync the hasMore state!
+
+                        const targetPage = Math.ceil(historyArray.length / 20) - 1;
+
+                        if (targetPage > 0) {
+                            skipFetchRef.current = true;
+                            setPage(targetPage);
+                        }
+
                         setIsLoading(false);
-                        return; // Exit here. The data was instant!
+                        return; // Stop execution
                     } catch (error) {
                         sessionStorage.removeItem('lccc_history_cache');
                     }
                 }
             }
 
+            // 2. The Guard
+            if (skipFetchRef.current) {
+                skipFetchRef.current = false;
+                return;
+            }
+
+            // 3. Normal Fetch
             try {
-                if (page === 0) setIsLoading(true); 
-                else setIsFetchingNext(true); // Show small spinner for pages 1, 2, 3...
+                if (page === 0) setIsLoading(true);
+                else setIsFetchingNext(true);
 
                 const response = await fetch(`http://localhost:8080/api/contests/history/${username}?page=${page}&size=20`);
 
@@ -95,21 +119,25 @@ export default function History() {
                 const newContests = data.content;
 
                 setHistoryData(prevData => {
-                    // If it's page 0, overwrite. If it's page 1+, append to the bottom!
                     const combinedData = page === 0 ? newContests : [...prevData, ...newContests];
-                    
+
+                    // THE UPGRADE: Store the data AND the hasMore boolean together
+                    const cachePayload = {
+                        data: combinedData,
+                        hasMore: !data.last
+                    };
+
                     try {
-                        sessionStorage.setItem('lccc_history_cache', JSON.stringify(combinedData));
+                        sessionStorage.setItem('lccc_history_cache', JSON.stringify(cachePayload));
                     } catch (storageError) {
                         if (storageError.name === 'QuotaExceededError') {
                             sessionStorage.removeItem('lccc_history_cache');
-                            sessionStorage.setItem('lccc_history_cache', JSON.stringify(combinedData));
+                            sessionStorage.setItem('lccc_history_cache', JSON.stringify(cachePayload));
                         }
                     }
                     return combinedData;
                 });
 
-                // Spring Boot's built-in boolean. True when no more pages exist.
                 setHasMore(!data.last);
 
             } catch (err) {
@@ -123,9 +151,7 @@ export default function History() {
         fetchHistory();
     }, [username, page]);
 
-    // ==========================================
-    // SKELETON UI (Only runs on initial page=0 load)
-    // ==========================================
+    // Skeleton UI
     if (isLoading) {
         return (
             <div className="flex items-center justify-center w-full max-w-5xl mx-auto px-4 min-h-[600px]">
@@ -204,10 +230,10 @@ export default function History() {
                     Back
                 </Link>
             </div>
-            
+
             {/* The Main Container */}
             <div className="relative h-[600px] w-full max-w-3xl mx-auto overflow-hidden flex items-center justify-center perspective-1000" onWheel={handleWheel}>
-                
+
                 {filteredHistory.map((contest, index) => {
                     const offset = index - activeIndex;
                     if (Math.abs(offset) > 2) return null;
