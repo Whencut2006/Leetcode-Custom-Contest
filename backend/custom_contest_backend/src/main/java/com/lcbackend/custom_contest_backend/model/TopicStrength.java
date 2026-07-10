@@ -29,5 +29,5 @@ public class TopicStrength {
     private int solvedCount = 0;
 
     @Column(columnDefinition = "numeric(10,2) default 0.0")
-    private double strengthRating = 0.0;
+    private double strengthRating = 1200.0;
 }

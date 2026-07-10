@@ -41,10 +41,13 @@ public class ContestProblem {
     @Column(columnDefinition = "text[]")
     private List<String> topics;
 
-    private Integer timeTakenSeconds; // Populated by Status Poller when solved
+    private Integer timeTakenSeconds;
 
-    // --- STATE MACHINE ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProblemStatus status = ProblemStatus.PENDING;
+
+    @Column(name = "targeted_topic")
+    private String targetedTopic;
+
 }

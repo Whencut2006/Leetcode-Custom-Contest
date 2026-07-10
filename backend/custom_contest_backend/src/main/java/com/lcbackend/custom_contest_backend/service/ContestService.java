@@ -2,10 +2,7 @@ package com.lcbackend.custom_contest_backend.service;
 
 import com.lcbackend.custom_contest_backend.dto.*;
 import com.lcbackend.custom_contest_backend.model.*;
-import com.lcbackend.custom_contest_backend.repository.CompanyProblemRepository;
-import com.lcbackend.custom_contest_backend.repository.ContestRepository;
-import com.lcbackend.custom_contest_backend.repository.ProblemRepository;
-import com.lcbackend.custom_contest_backend.repository.UserRepository;
+import com.lcbackend.custom_contest_backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
@@ -27,6 +24,7 @@ public class ContestService {
     private final UserRepository userRepository;
     private final ContestRepository contestRepository;
     private final ProblemRepository problemRepository;
+    private final TopicStrengthRepository topicStrengthRepository;
 
     @Transactional
     public ContestResponse createCompanyContest(@NonNull CompanyContestRequest request) {
@@ -151,8 +149,8 @@ public class ContestService {
             problem.setProblemOrder(order++);
             problem.setTitle(randomProblem.getTitle());
             problem.setStatus(ProblemStatus.PENDING);
-
             problem.setTopics(randomProblem.getTopics());
+            problem.setTargetedTopic(criteria.getTopic());
 
             contest.getContestProblems().add(problem);
         }
@@ -232,8 +230,11 @@ public class ContestService {
         Contest contest = contestRepository.findById(contestId).orElseThrow(
                 () -> new RuntimeException("Contest Not Found"));
 
+        User user = contest.getUser();
+
         List<String> solvedSlugs = request.getSolvedSlugs();
-        if (solvedSlugs == null || solvedSlugs.isEmpty()) {
+        boolean isAbandoned = (solvedSlugs == null || solvedSlugs.isEmpty());
+        if (isAbandoned) {
             contest.setStatus(ContestStatus.ABANDONED);
         } else {
             contest.setStatus(ContestStatus.COMPLETED);
@@ -241,11 +242,56 @@ public class ContestService {
 
         contest.setEndedAt(LocalDateTime.now());
 
-        if (solvedSlugs != null && !solvedSlugs.isEmpty()) {
-            for (ContestProblem problem : contest.getContestProblems()) {
-                if (solvedSlugs.contains(problem.getTitleSlug())) {
-                    problem.setStatus(ProblemStatus.SOLVED);
+        for(ContestProblem problem : contest.getContestProblems()) {
+            boolean isSolved = !isAbandoned && solvedSlugs.contains(problem.getTitleSlug());
+            problem.setStatus(isSolved ? ProblemStatus.SOLVED : ProblemStatus.FAILED);
+
+            //elo math (ig)
+            double problemRating = 1500.0;
+            if("Easy".equalsIgnoreCase(problem.getDifficulty()))
+                problemRating = 1000.0;
+            else if("Hard".equalsIgnoreCase(problem.getDifficulty()))
+                problemRating = 2000.0;
+
+            List<String> topicsToEvaluate = new ArrayList<>();
+            if(problem.getTargetedTopic() != null && !problem.getTargetedTopic().trim().isEmpty()) {
+                //custom contest
+                topicsToEvaluate.add(problem.getTargetedTopic());
+            }
+            else {
+                //company contest
+                if(problem.getTopics() != null) {
+                    topicsToEvaluate.addAll(problem.getTopics());
                 }
+            }
+
+            for(String topicName : topicsToEvaluate) {
+                TopicStrength ts = topicStrengthRepository.findByUserAndTopicName(user, topicName)
+                        .orElseGet(() -> {
+                            TopicStrength newTs = new TopicStrength();
+                            newTs.setUser(user);
+                            newTs.setTopicName(topicName);
+                            newTs.setSolvedCount(0);
+                            newTs.setStrengthRating(1200.0);
+                            return newTs;
+                        });
+
+                double userRating = ts.getStrengthRating();
+                //expected probab
+                double expectedScore = 1.0 / (1.0 + Math.pow(10.0, (problemRating - userRating) / 400.0));
+                double actualScore = isSolved ? 1.0 : 0.0;
+                // huge rewards for win and gentle slap for losses
+                int kFactor = isSolved ? 32 : 10;
+
+                double ratingChange = kFactor * (actualScore - expectedScore);
+                ts.setStrengthRating(userRating + ratingChange);
+
+                if(isSolved) {
+                    ts.setSolvedCount(ts.getSolvedCount() + 1);
+                }
+
+                topicStrengthRepository.save(ts);
+
             }
         }
 
