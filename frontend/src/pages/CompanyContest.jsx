@@ -128,9 +128,9 @@ export default function CompanyContest() {
           {companies.map((company) => (
             <div
               key={company.id}
-              className={`flex flex-col justify-between p-6 rounded-2xl border transition-all duration-200 shadow-sm ${
+              className={`flex flex-col justify-between p-6 rounded-2xl border transition-all duration-200 shadow-2xl ${
                 theme === 'dark'
-                  ? 'bg-[#242424] border-gray-800 hover:bg-[#2c2c2c] hover:border-gray-700'
+                  ? 'bg-[#1a1a1a] border-gray-800 hover:bg-[#2c2c2c] hover:border-gray-700'
                   : 'bg-white border-gray-200 hover:bg-[#f5f5f5] hover:border-gray-300'
               }`}
             >

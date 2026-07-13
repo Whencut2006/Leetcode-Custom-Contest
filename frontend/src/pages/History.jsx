@@ -168,7 +168,7 @@ export default function History() {
                         };
                         return (
                             <div key={`skeleton-${index}`} style={cardStyle} className="absolute w-full transition-all duration-500">
-                                <div className="flex flex-col justify-between h-[480px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-100 dark:border-gray-800">
+                                <div className="flex flex-col justify-between h-[480px] w-full bg-white dark:bg-[#1A1A1A] rounded-3xl shadow-2xl p-6 border border-gray-300 dark:border-gray-800">
                                     <div>
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="w-1/2">
@@ -183,7 +183,7 @@ export default function History() {
                                         <hr className="border-gray-200 dark:border-gray-800 mb-4" />
                                         <div className="flex flex-col gap-1.5 overflow-hidden">
                                             {[1, 2, 3, 4].map((row) => (
-                                                <div key={row} className="flex items-center justify-between p-3.5 rounded-xl even:bg-gray-50 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent">
+                                                <div key={row} className="flex items-center justify-between p-3.5 rounded-xl even:bg-gray-100 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent">
                                                     <div className="flex items-center gap-4 w-full">
                                                         <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-[#333333] flex-shrink-0 animate-pulse"></div>
                                                         <div className="h-4 bg-gray-200 dark:bg-[#333333] rounded-md w-2/3 animate-pulse"></div>
@@ -264,7 +264,7 @@ export default function History() {
                                     <hr className="border-gray-200 dark:border-gray-800 mb-4" />
                                     <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[280px] pr-2 pb-2 custom-scrollbar">
                                         {contest.contestProblems.map((problem) => (
-                                            <a key={problem.titleSlug} href={`https://leetcode.com/problems/${problem.titleSlug}/`} target="_blank" rel="noreferrer" className="group flex items-center justify-between p-3.5 rounded-xl even:bg-gray-50 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent transition-colors hover:bg-gray-100 dark:hover:bg-[#2f2f2f]">
+                                            <a key={problem.titleSlug} href={`https://leetcode.com/problems/${problem.titleSlug}/`} target="_blank" rel="noreferrer" className="group flex items-center justify-between p-3.5 rounded-xl even:bg-gray-100 odd:bg-transparent dark:even:bg-[#252525] dark:odd:bg-transparent transition-colors hover:bg-gray-100 dark:hover:bg-[#2f2f2f]">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-7 h-7 text-xl relative flex-shrink-0">
                                                         {problem.status === 'SOLVED' ? <GreenTick /> : <RedCross />}

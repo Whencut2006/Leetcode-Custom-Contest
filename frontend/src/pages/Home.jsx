@@ -6,7 +6,7 @@ export default function Home() {
 
   // --- MINIMALIST STYLES ---
   // ZERO floating, ZERO massive shadows. Just smooth, grounded color transitions.
-  const cardClass = `group block p-6 rounded-xl border transition-colors duration-200 ${
+  const cardClass = `group block p-6 rounded-xl shadow-xl border transition-colors duration-200 ${
     theme === "dark"
       ? "bg-[#242424] border-gray-800 hover:bg-[#2c2c2c] hover:border-gray-600"
       : "bg-white border-gray-200 hover:bg-[#fafafa] hover:border-gray-300"
