@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class ContestService {
     private final ContestRepository contestRepository;
     private final ProblemRepository problemRepository;
     private final TopicStrengthRepository topicStrengthRepository;
+    private final ProblemPickerRepository problemPickerRepository;
 
     @Transactional
     public ContestResponse createCompanyContest(@NonNull CompanyContestRequest request) {
@@ -125,23 +127,33 @@ public class ContestService {
         contest.setStatus(ContestStatus.GENERATED);
 
         List<String> pickedSlugs = new ArrayList<>();
-        pickedSlugs.add("dummy-slug-to-prevent-sql-error");
-
+        Random random = new Random();
         int order = 1;
+
+        List<Problem> candidatePool = problemPickerRepository.fetchCandidatePool(
+                request.getProblemCriteria(),
+                pickedSlugs
+        );
+
         for (ProblemCriteria criteria : request.getProblemCriteria()) {
 
-            Problem randomProblem = problemRepository.findRandomProblemByCriteria(
-                    criteria.getDifficulty(),
-                    criteria.getTopic(),
-                    pickedSlugs);
-            if (randomProblem == null) {
+            List<Problem> matchingProblems = candidatePool.stream()
+                    .filter(p -> p.getDifficulty().equalsIgnoreCase(criteria.getDifficulty()))
+                    .filter(p -> p.getTopics() != null && p.getTopics().contains(criteria.getTopic()))
+                    .filter(p -> !pickedSlugs.contains(p.getTitleSlug()))
+                    .toList();
+
+            if (matchingProblems.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Not enough problems found in the database for: "
                                 + criteria.getDifficulty() + " - " + criteria.getTopic());
             }
 
+            Problem randomProblem = matchingProblems.get(random.nextInt(matchingProblems.size()));
+
             pickedSlugs.add(randomProblem.getTitleSlug());
 
+            // 3. Attach to contest
             ContestProblem problem = new ContestProblem();
             problem.setContest(contest);
             problem.setTitleSlug(randomProblem.getTitleSlug());

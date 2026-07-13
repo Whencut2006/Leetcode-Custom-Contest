@@ -23,7 +23,8 @@ import java.util.List;
 public class Contest {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contest_seq")
+    @SequenceGenerator(name = "contest_seq", sequenceName = "contest_seq", allocationSize = 50)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
